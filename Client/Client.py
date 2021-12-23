@@ -9,9 +9,9 @@ class Client:
     server_port = None
     tcp_socket = None
 
-    def __init__(self, team_name):
+    def __init__(self, team_name, ip_address=gethostname()):
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
-        self.udpSocket.bind((socket.gethostname(), self.udpPort))
+        self.udpSocket.bind((ip_address, self.udpPort))
         self.team_name = team_name
 
     def receive_offer(self):
@@ -48,3 +48,9 @@ class Client:
         print(message.decode("utf-8"))
         self.tcp_socket.close()
         return None
+
+
+if __name__ == '__main__':
+    print("Enter team name:")
+    client = Client(input())
+    client.start_client()
