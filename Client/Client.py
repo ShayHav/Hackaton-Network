@@ -1,5 +1,5 @@
 from socket import *
-
+import json
 
 class Client:
     udpPort = 13117
@@ -16,9 +16,10 @@ class Client:
 
     def receive_offer(self):
         message, server_address = self.udpSocket.recvfrom(7)
-        magic_cookie = int(message[0:4])
-        message_type = int(message[4:5])
-        server_port = int(message[5:])
+        decoded_message = json.loads(message.decode())
+        magic_cookie = decoded_message.get("magicCookie")
+        message_type = decoded_message.get("messageType")
+        server_port = decoded_message.get("tcpPort")
         print(f"Received offer from {server_address},attempting to connect...")
         return magic_cookie, message_type, server_port, server_address
 
@@ -33,7 +34,7 @@ class Client:
                     message = f"{self.team_name}\n".encode("utf-8")
                     tcp_socket.send(message)
                     self.handle_game()
-                except:
+                except InterruptedError:
                     print("got exception")
                 finally:
                     self.tcp_socket.close()
