@@ -14,9 +14,8 @@ class Server:
     message = None
     teams_names = [None]*2
     answers = []
-    c_in = threading.Condition()
+    lock = threading.Condition()
     outgoing_messages = []
-    c_out = threading.Condition()
     send_offers = True
 
     def __init__(self):
@@ -25,7 +24,7 @@ class Server:
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
         # TODO change after
-        self.ip = "192.168.1.210"
+        self.ip = "10.0.0.38"
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
@@ -74,46 +73,46 @@ class Server:
     def decide_winner(self):
         current_time = time.time()
         correct_answer = self.question_bank.get_answer()
-        self.c_in.acquire()
+        self.lock.acquire()
         while True:
             if time.time() - current_time > 10:
                 self.draw()
                 return
-            self.c_in.acquire()
+            self.lock.acquire()
             if len(self.answers) == 0:
-                self.c_in.wait(10)
+                self.lock.wait(10)
             else:
                 break
 
-        self.c_in.acquire()
+        self.lock.acquire()
         player_id, answer = self.answers[0]
         if correct_answer == answer:
             winner = player_id
         else:
             winner = (player_id + 1) % 2
 
-        self.c_in.release()
-        self.c_out.acquire()
+        self.lock.release()
+        self.lock.acquire()
         self.outgoing_messages.append(f"""Game over!
                              The correct answer was {correct_answer}
                              Congratulations to the winner: {self.teams_names[winner]}""")
-        self.c_out.notify_all()
-        self.c_out.release()
+        self.lock.notify_all()
+        self.lock.release()
 
     def draw(self):
-        self.c_out.acquire()
+        self.lock.acquire()
         self.outgoing_messages.append(f"""Game over!
                                      The correct answer was {self.question_bank.get_answer()}
                                      The game was ended with a draw""")
-        self.c_out.notify_all()
-        self.c_out.release()
+        self.lock.notify_all()
+        self.lock.release()
 
     def assemble_message(self):
         can_assemble = False
         while not can_assemble:
-            self.c_in.acquire()
+            self.lock.acquire()
             if not (self.teams_names[0] and self.teams_names[1]):
-                self.c_in.wait()
+                self.lock.wait()
             else:
                 can_assemble = True
 
@@ -124,47 +123,49 @@ class Server:
                       ==
                       Please answer the following question as fast as you can:
                       {question}"""
-        self.c_out.acquire()
-        self.c_out.notify_all()
-        self.c_out.release()
-        self.c_in.release()
+        self.lock.notify_all()
+        self.lock.release()
 
     def receive_player(self, conn, address, player_id):
         # get the team name of the player and save it
         team_name = conn.recv(1024).decode("utf-8")
-        self.c_in.acquire()
+        self.lock.acquire()
         self.teams_names.insert(player_id, team_name)
-        self.c_in.notify_all()
-        self.c_in.release()
+        self.lock.notify_all()
+        self.lock.release()
         # sending the message
         self.send_question(conn, address)
         # getting the answer from the player
         answer = conn.recv(1024).decode("utf-8")
-        self.c_in.acquire()
+        self.lock.acquire()
         self.answers.append((player_id, answer))
-        self.c_in.notify_all()
-        self.c_in.release()
+        self.lock.notify_all()
+        self.lock.release()
         # sending the response to the player
-        self.c_in.acquire()
-        if len(self.outgoing_messages) == 0:
-            self.c_in.wait()
-        self.c_in.acquire()
-        message = self.outgoing_messages[0].encode("utf-8")
-        conn.sendto(message)
-        conn.close()
+        while True:
+            self.lock.acquire()
+            if len(self.outgoing_messages) == 0:
+                self.lock.wait()
+            else:
+                message = self.outgoing_messages[0].encode("utf-8")
+                conn.sendto(message)
+                self.lock.notify_all()
+                self.lock.release()
+                conn.close()
+                break
 
     def send_question(self, conn, address):
         # get the lock to the question to send
-        self.c_out.acquire()
-        if self.message:
-            message_to_send = self.message.encode("utf-8")
-            conn.sendto(message_to_send, address)
-        else:
-            self.c_out.wait()
-            self.c_out.acquire()
-            message_to_send = self.message.encode("utf-8")
-            conn.sendto(message_to_send, address)
-        self.c_out.release()
+        cont_loop = True
+        while cont_loop:
+            self.lock.acquire()
+            if not self.message:
+                self.lock.wait()
+            else:
+                message_to_send = self.message.encode("utf-8")
+                conn.sendto(message_to_send, address)
+                self.lock.release()
+                cont_loop = not cont_loop
 
     def start(self):
         while True:

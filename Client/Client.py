@@ -15,7 +15,7 @@ class Client:
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # TODO change after
-        self.ip = "192.168.1.210"
+        self.ip = "10.0.0.38"
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
