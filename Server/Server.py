@@ -7,12 +7,12 @@ import json
 
 class Server:
     udpDstPort = 13117
-    server_udp_port = 20001
-    server_tcp_port = 20000
+    server_udp_port = 19002
+    server_tcp_port = 19003
     magicCookie = 0xabcddcba
     messageType = 0x2
     message = None
-    teams_names = [None]*2
+    teams_names = [None] * 2
     answers = []
     lock = threading.Condition()
     outgoing_messages = []
@@ -24,7 +24,7 @@ class Server:
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
         # TODO change after
-        self.ip = "10.0.0.38"
+        self.ip = "192.168.1.54"
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
@@ -58,13 +58,14 @@ class Server:
 
     def send_udp_offers(self):
         message = json.dumps({"magicCookie": self.magicCookie,
-                              "messageType":  self.messageType,
+                              "messageType": self.messageType,
                               "tcpPort": self.server_tcp_port})
         while self.send_offers:
             self.server_udp_socket.sendto(message.encode(), ("255.255.255.255", self.udpDstPort))
             time.sleep(1)
 
     def clean(self):
+        self.send_offers = True
         self.message = None
         self.teams_names = [None, None]
         self.answers = []
@@ -80,6 +81,7 @@ class Server:
             self.lock.acquire()
             if len(self.answers) == 0:
                 self.lock.wait(10.0)
+                self.lock.release()
             else:
                 self.lock.notify_all()
                 self.lock.release()
@@ -95,16 +97,16 @@ class Server:
         self.lock.notify_all()
         self.lock.release()
         self.lock.acquire()
-        self.outgoing_messages.append(f"Game over!\nThe correct answer was {correct_answer}\n \
-        Congratulations to the winner: {self.teams_names[winner]}""")
+        self.outgoing_messages.append(f"Game over!\nThe correct answer was {correct_answer}\n" +
+                                      f"Congratulations to the winner: {self.teams_names[winner]}")
         self.lock.notify_all()
         self.lock.release()
 
     def draw(self):
         self.lock.acquire()
-        self.outgoing_messages.append(f"Game over!\n \
-                                     The correct answer was {self.question_bank.get_answer()}\n \
-                                     The game was ended with a draw")
+        self.outgoing_messages.append("Game over!\n" +
+                                      f"The correct answer was {self.question_bank.get_answer()}\n" +
+                                      "The game was ended with a draw")
         self.lock.notify_all()
         self.lock.release()
 
@@ -114,12 +116,13 @@ class Server:
             self.lock.acquire()
             if not (self.teams_names[0] and self.teams_names[1]):
                 self.lock.wait()
+                self.lock.release()
             else:
                 can_assemble = True
 
         question = self.question_bank.get_question()
-        self.message = f"Welcome to Quick Maths.\nPlayer 1: {self.teams_names[0]}\nPlayer 2: {self.teams_names[1]}\n" +\
-                       f"==\nPlease answer the following question as fast as you can:\n{question}"
+        self.message = (f"Welcome to Quick Maths.\nPlayer 1: {self.teams_names[0]}\nPlayer 2: {self.teams_names[1]}\n" +
+                        f"==\nPlease answer the following question as fast as you can:\n{question}")
         self.lock.notify_all()
         self.lock.release()
 
@@ -143,9 +146,10 @@ class Server:
             self.lock.acquire()
             if len(self.outgoing_messages) == 0:
                 self.lock.wait()
+                self.lock.release()
             else:
                 message = self.outgoing_messages[0].encode("utf-8")
-                conn.sendto(message)
+                conn.send(message)
                 self.lock.notify_all()
                 self.lock.release()
                 conn.close()
@@ -158,6 +162,7 @@ class Server:
             self.lock.acquire()
             if not self.message:
                 self.lock.wait()
+                self.lock.release()
             else:
                 message_to_send = self.message.encode("utf-8")
                 conn.sendto(message_to_send, address)
@@ -165,15 +170,15 @@ class Server:
                 self.lock.release()
                 cont_loop = not cont_loop
 
-    def start(self):
-        while True:
-            try:
-                self.manage_server()
-            except InterruptedError:
-                print("got message")
-                self.clean()
+
+def start():
+    server = Server()
+    while True:
+        try:
+            server.manage_server()
+        except InterruptedError:
+            print("got message")
 
 
 if __name__ == "__main__":
-    server = Server()
-    server.start()
+    start()

@@ -15,7 +15,7 @@ class Client:
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # TODO change after
-        self.ip = "10.0.0.38"
+        self.ip = "192.168.1.54"
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
@@ -42,9 +42,8 @@ class Client:
                 except (InterruptedError, ConnectionRefusedError, ConnectionResetError) as e:
                     print("error message")
                     continue
-                finally:
-                    self.tcp_socket.close()
-                    print("Server disconnected, listening for offer requests...")
+
+                print("Server disconnected, listening for offer requests...")
 
     def handle_game(self):
         message = self.tcp_socket.recv(2048)
