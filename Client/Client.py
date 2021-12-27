@@ -15,7 +15,7 @@ class Client:
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # TODO change after
-        self.ip = "192.168.1.54"
+        self.ip = "10.0.0.38"
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
@@ -39,9 +39,8 @@ class Client:
                     message = f"{self.team_name}\n".encode("utf-8")
                     self.tcp_socket.send(message)
                     self.handle_game()
-                except InterruptedError:
-                    print("got exception")
-                except ConnectionRefusedError:
+                except (InterruptedError, ConnectionRefusedError, ConnectionResetError) as e:
+                    print("error message")
                     continue
                 finally:
                     self.tcp_socket.close()

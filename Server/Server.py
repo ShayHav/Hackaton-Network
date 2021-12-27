@@ -24,7 +24,7 @@ class Server:
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
         # TODO change after
-        self.ip = "192.168.1.54"
+        self.ip = "10.0.0.38"
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
@@ -79,7 +79,7 @@ class Server:
                 return
             self.lock.acquire()
             if len(self.answers) == 0:
-                self.lock.wait(10)
+                self.lock.wait(10.0)
             else:
                 self.lock.notify_all()
                 self.lock.release()
@@ -95,17 +95,16 @@ class Server:
         self.lock.notify_all()
         self.lock.release()
         self.lock.acquire()
-        self.outgoing_messages.append(f"""Game over!
-                             The correct answer was {correct_answer}
-                             Congratulations to the winner: {self.teams_names[winner]}""")
+        self.outgoing_messages.append(f"Game over!\nThe correct answer was {correct_answer}\n \
+        Congratulations to the winner: {self.teams_names[winner]}""")
         self.lock.notify_all()
         self.lock.release()
 
     def draw(self):
         self.lock.acquire()
-        self.outgoing_messages.append(f"""Game over!
-                                     The correct answer was {self.question_bank.get_answer()}
-                                     The game was ended with a draw""")
+        self.outgoing_messages.append(f"Game over!\n \
+                                     The correct answer was {self.question_bank.get_answer()}\n \
+                                     The game was ended with a draw")
         self.lock.notify_all()
         self.lock.release()
 
@@ -119,12 +118,8 @@ class Server:
                 can_assemble = True
 
         question = self.question_bank.get_question()
-        self.message = f"""Welcome to Quick Maths.
-                      Player 1: {self.teams_names[0]}
-                      Player 2: {self.teams_names[1]}
-                      ==
-                      Please answer the following question as fast as you can:
-                      {question}"""
+        self.message = f"Welcome to Quick Maths.\nPlayer 1: {self.teams_names[0]}\nPlayer 2: {self.teams_names[1]}\n" +\
+                       f"==\nPlease answer the following question as fast as you can:\n{question}"
         self.lock.notify_all()
         self.lock.release()
 
@@ -176,6 +171,7 @@ class Server:
                 self.manage_server()
             except InterruptedError:
                 print("got message")
+                self.clean()
 
 
 if __name__ == "__main__":
