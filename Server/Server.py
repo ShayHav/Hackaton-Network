@@ -24,7 +24,7 @@ class Server:
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
         # TODO change after
-        self.ip = "10.0.0.38"
+        self.ip = "192.168.1.54"
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
@@ -73,7 +73,6 @@ class Server:
     def decide_winner(self):
         current_time = time.time()
         correct_answer = self.question_bank.get_answer()
-        self.lock.acquire()
         while True:
             if time.time() - current_time > 10:
                 self.draw()
@@ -82,6 +81,8 @@ class Server:
             if len(self.answers) == 0:
                 self.lock.wait(10)
             else:
+                self.lock.notify_all()
+                self.lock.release()
                 break
 
         self.lock.acquire()
@@ -91,6 +92,7 @@ class Server:
         else:
             winner = (player_id + 1) % 2
 
+        self.lock.notify_all()
         self.lock.release()
         self.lock.acquire()
         self.outgoing_messages.append(f"""Game over!
@@ -164,6 +166,7 @@ class Server:
             else:
                 message_to_send = self.message.encode("utf-8")
                 conn.sendto(message_to_send, address)
+                self.lock.notify_all()
                 self.lock.release()
                 cont_loop = not cont_loop
 
