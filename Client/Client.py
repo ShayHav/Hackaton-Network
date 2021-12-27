@@ -1,5 +1,7 @@
 from socket import *
 import json
+# TODO check what to do with sending messages via json
+
 
 class Client:
     udpPort = 13117
@@ -9,7 +11,7 @@ class Client:
     server_port = None
     tcp_socket = None
 
-    def __init__(self, team_name, ip_address=gethostname()):
+    def __init__(self, team_name, ip_address=gethostbyname(gethostname())):
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.bind((ip_address, self.udpPort))
         self.team_name = team_name
