@@ -59,7 +59,8 @@ class Server:
         self.clean()
 
     def send_udp_offers(self):
-        message = struct.pack("Ibh", self.magicCookie, self.messageType, self.server_tcp_port)
+        message = self.magicCookie.to_bytes(4, "little") + self.messageType.to_bytes(1, "little") + self.messageType.to_bytes(2, "little")
+        #message = struct.pack("Ibh", self.magicCookie, self.messageType, self.server_tcp_port)
         while self.send_offers:
             self.server_udp_socket.sendto(message, ("172.99.255.255", self.udpDstPort))
             time.sleep(1)

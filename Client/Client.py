@@ -22,7 +22,10 @@ class Client:
 
     def receive_offer(self):
         message, server_address = self.udpSocket.recvfrom(1024)
-        magic_cookie, message_type, server_port = struct.unpack("Ibh", message)
+        magic_cookie = message[1:4].from_bytes("little")
+        message_type = message[4:5].from_bytes("little")
+        server_port = message[5:].from_bytes("little")
+        # magic_cookie, message_type, server_port = struct.unpack("Ibh", message)
         print(f"Received offer from {server_address[0]},attempting to connect...")
         return magic_cookie, message_type, server_port, server_address
 
