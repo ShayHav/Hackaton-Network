@@ -17,7 +17,7 @@ class Client:
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         #self.ip = "132.73.206.118"
         self.ip = get_if_addr(inter)
-        self.udpSocket.bind((self.ip, self.udpPort))
+        self.udpSocket.bind(("172.99.255.255", self.udpPort))
         self.team_name = team_name
 
     def receive_offer(self):
