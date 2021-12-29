@@ -9,8 +9,8 @@ from scapy.arch import get_if_addr
 
 class Server:
     udpDstPort = 13117
-    server_udp_port = 19002
-    server_tcp_port = 19003
+    server_udp_port = 19000
+    server_tcp_port = 19001
     magicCookie = 0xabcddcba
     messageType = 0x2
     message = None
