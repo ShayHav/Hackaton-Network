@@ -3,6 +3,7 @@ import threading
 import time
 import QuestionBank
 import json
+import scapy as s
 
 
 class Server:
@@ -24,7 +25,7 @@ class Server:
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
         # TODO change after
-        self.ip = "192.168.1.54"
+        self.ip = s.get_if_addr("eth1")
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
