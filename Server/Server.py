@@ -1,3 +1,4 @@
+import struct
 from socket import *
 import threading
 import time
@@ -24,7 +25,7 @@ class Server:
         self.server_udp_socket = socket(AF_INET, SOCK_DGRAM)
         self.server_udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.welcoming_tcp_socket = socket(AF_INET, SOCK_STREAM)
-        # TODO change after
+        #self.ip = "132.73.206.118"
         self.ip = s.get_if_addr("eth1")
         self.server_udp_socket.bind((self.ip, self.server_udp_port))
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
@@ -58,11 +59,9 @@ class Server:
         self.clean()
 
     def send_udp_offers(self):
-        message = json.dumps({"magicCookie": self.magicCookie,
-                              "messageType": self.messageType,
-                              "tcpPort": self.server_tcp_port})
+        message = struct.pack("Ibh", self.magicCookie, self.messageType, self.server_tcp_port)
         while self.send_offers:
-            self.server_udp_socket.sendto(message.encode(), ("255.255.255.255", self.udpDstPort))
+            self.server_udp_socket.sendto(message, ("255.255.255.255", self.udpDstPort))
             time.sleep(1)
 
     def clean(self):

@@ -1,3 +1,4 @@
+import struct
 from socket import *
 import json
 import scapy
@@ -8,24 +9,20 @@ class Client:
     udpPort = 13117
     magicCookie = 0xabcddcba
     messageType = 0x2
-    offerLength = 7 * 8
     server_port = None
     tcp_socket = None
 
     def __init__(self, team_name, inter='eth1'):
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        # TODO change after
+        #self.ip = "132.73.206.118"
         self.ip = scapy.get_if_addr(inter)
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
     def receive_offer(self):
         message, server_address = self.udpSocket.recvfrom(1024)
-        decoded_message = json.loads(message.decode())
-        magic_cookie = decoded_message.get("magicCookie")
-        message_type = decoded_message.get("messageType")
-        server_port = decoded_message.get("tcpPort")
+        magic_cookie, message_type, server_port = struct.unpack("Ibh", message)
         print(f"Received offer from {server_address[0]},attempting to connect...")
         return magic_cookie, message_type, server_port, server_address
 
@@ -60,7 +57,7 @@ class Client:
 if __name__ == '__main__':
     print("dev mode?[y,n]")
     ans = input()
-    inter = 'eth1' if ans == y else 'eth2'
+    inter = 'eth1' if ans == "y" else 'eth2'
     print("Enter team name:")
     client = Client(input(), inter)
     client.start_client()
