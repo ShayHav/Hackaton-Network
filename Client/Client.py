@@ -1,7 +1,7 @@
 import struct
 from socket import *
 import json
-import scapy
+from scapy.arch import get_if_addr
 # TODO check what to do with sending messages via json
 
 
@@ -16,7 +16,7 @@ class Client:
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         #self.ip = "132.73.206.118"
-        self.ip = scapy.get_if_addr(inter)
+        self.ip = get_if_addr(inter)
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
