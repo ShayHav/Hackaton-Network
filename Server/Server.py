@@ -28,6 +28,7 @@ class Server:
         #self.ip = "132.73.206.118"
         self.ip = get_if_addr("eth1")
         self.server_udp_socket.bind(("172.99.255.255", self.server_udp_port))
+        self.welcoming_tcp_socket.setsockopt(SOL_SOCKET,SO_REUSEADDR,1)
         self.welcoming_tcp_socket.bind((self.ip, self.server_tcp_port))
         self.welcoming_tcp_socket.listen()
 
