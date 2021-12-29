@@ -1,5 +1,6 @@
 from socket import *
 import json
+import scapy
 # TODO check what to do with sending messages via json
 
 
@@ -11,11 +12,11 @@ class Client:
     server_port = None
     tcp_socket = None
 
-    def __init__(self, team_name, ip_address=gethostbyname(gethostname())):
+    def __init__(self, team_name, inter='eth1'):
         self.udpSocket = socket(AF_INET, SOCK_DGRAM)
         self.udpSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         # TODO change after
-        self.ip = "192.168.1.54"
+        self.ip = scapy.get_if_addr(inter)
         self.udpSocket.bind((self.ip, self.udpPort))
         self.team_name = team_name
 
@@ -57,6 +58,9 @@ class Client:
 
 
 if __name__ == '__main__':
+    print("dev mode?[y,n]")
+    ans = input()
+    inter = 'eth1' if ans == y else 'eth2'
     print("Enter team name:")
-    client = Client(input())
+    client = Client(input(), inter)
     client.start_client()
